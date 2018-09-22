@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+import click
+import requests
+
+url = 'https://callook.info/{callsign}/json'
+fmtinvalid = '[{index:03d}] {callsign:6} Invalid'
+fmt1 = '[{index:03d}] {callsign:6} {operclass:10} {name:20} {location:20} {grantDate}'
+fmt2 = '      {frn:10} {uls}'
+
+
+@click.command()
+@click.option('-v', '--verbose', is_flag=True)
+@click.argument('callsign', nargs=-1)
+def main(callsign, verbose=False):
+    for i, cs in enumerate(callsign):
+        res = requests.get(url.format(callsign=cs))
+        res.raise_for_status()
+        data = res.json()
+
+        if data.get('status') == 'INVALID':
+            print(fmtinvalid.format(index=i, callsign=cs))
+            continue
+
+        if 'current' in data:
+            data['callsign'] = data['current']['callsign']
+            data['operclass'] = data['current']['operClass']
+        else:
+            data['callsign'] = '-'
+            data['operclass'] = '-'
+
+        if 'address' in data:
+            data['location'] = data['address'].get('line2')
+        else:
+            data['location'] = '-'
+
+        data['grantDate'] = data.get('otherInfo', {}).get('grantDate', '-')
+
+        print(fmt1.format(index=i, **data))
+        if (verbose):
+            data['uls'] = data['otherInfo'].get('ulsUrl', '-')
+            data['frn'] = data['otherInfo'].get('frn', '-')
+            print(fmt2.format(index=i, **data))
+
+
+if __name__ == '__main__':
+    main()
