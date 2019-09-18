@@ -1,6 +1,6 @@
 #!/bin/sh
 
-nc -l -u 7355  |
+nc -l -u ${NC_LISTEN_PORT:-7355}  |
 	sox \
 		-r 48000 -t raw -b 16 -c 1 -e signed-integer - \
 		-r 22050 -t raw -b 16 -c 1 -e signed-integer - |
